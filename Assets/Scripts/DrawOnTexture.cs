@@ -7,14 +7,18 @@ using UnityEngine;
 
 public class DrawOnTexture : MonoBehaviour
 {
-    public Texture2D baseTexture;
+    [Header("Textures")]
+    [SerializeField] private Texture2D predictionTexture;
+    [SerializeField] private Texture2D drawTexture;
 
     [SerializeField] private int brushRadius;
     [SerializeField] private Material material;
 
     private void Start()
     {
+        DrawTextureScaleUp();
         ResetCanvas();
+        CheckCam();
     }
 
     private void Update()
@@ -27,17 +31,21 @@ public class DrawOnTexture : MonoBehaviour
         ResetCanvas();
     }
 
+    private void CheckCam()
+    {
+        if (Camera.main == null)
+        {
+            throw new Exception("Cannot find main camera");
+            this.enabled = false;
+        }
+    }
+
     /// <summary>
     /// Allowing to draw on texture
     /// </summary>
     /// <exception cref="Exception"></exception>
     private void DoDrawing()
     {
-        if (Camera.main == null)
-        {
-            throw new Exception("Cannot find main camera");
-        }
-
         if (Input.GetKeyDown(KeyCode.C))
         {
             ResetCanvas();
@@ -54,28 +62,46 @@ public class DrawOnTexture : MonoBehaviour
 
         Vector2 pixelUV = hit.textureCoord;
         SetBrushCoordinates(GetBrushCoordinates(pixelUV));
-        
     }
 
     public void ResetCanvas()
     {
-        var fillColorArray = new Color[baseTexture.width * baseTexture.height];
+        ResetPredictionTexture();
+        ResetDrawTexture();
+
+        PredictionTextureScaleUp();
+    }
+
+    private void ResetPredictionTexture()
+    {
+        var fillColorArray = new Color[predictionTexture.width * predictionTexture.height];
  
         for(var i = 0; i < fillColorArray.Length; ++i)
         {
             fillColorArray[i] = Color.black;
         }
-  
-        baseTexture.SetPixels(fillColorArray);
-        baseTexture.Apply();
-        TextureScaleUp();
+        
+        predictionTexture.SetPixels(fillColorArray);
+        predictionTexture.Apply();
     }
 
+    private void ResetDrawTexture()
+    {
+        var fillColorArray = new Color[drawTexture.width * drawTexture.height];
+ 
+        for(var i = 0; i < fillColorArray.Length; ++i)
+        {
+            fillColorArray[i] = Color.black;
+        }
+        drawTexture.SetPixels(fillColorArray);
+        drawTexture.Apply();
+    }
+    
     private List<Vector2> GetBrushCoordinates(Vector2 hitPoint)
     {
         List<Vector2> coordinates = new List<Vector2>();
 
-        hitPoint = new Vector2(hitPoint.x * baseTexture.width, hitPoint.y * baseTexture.height);
+        hitPoint = new Vector2(hitPoint.x * drawTexture.width, hitPoint.y * drawTexture.height);
         
         var hitPointX = (int) hitPoint.x;
         var hitPointY = (int) hitPoint.y;
@@ -96,31 +122,48 @@ public class DrawOnTexture : MonoBehaviour
     {
         foreach (var coordinate in coordinates)
         {
-            baseTexture.SetPixel((int)coordinate.x, (int)coordinate.y, Color.white);
+            drawTexture.SetPixel((int)coordinate.x, (int)coordinate.y, Color.white);
+            predictionTexture.SetPixel((int)coordinate.x, (int)coordinate.y, Color.white);
         }
-        baseTexture.Apply();
+        drawTexture.Apply();
+        predictionTexture.Apply();
     }
 
-    public void TextureScaleUp()
+    public void PredictionTextureScaleUp()
     { 
         Resize(256, 256);
     }
     
-    public Texture2D TextureScaleDown()
+    public void DrawTextureScaleUp()
+    { 
+        DrawResize(256, 256);
+    }
+    
+    public Texture2D PredictionTextureScaleDown()
     {
         Resize(28, 28);
 
-        return baseTexture;
+        return predictionTexture;
     }
     
     void Resize(int targetX,int targetY)
     {
         RenderTexture rt=new RenderTexture(targetX, targetY,8);
         RenderTexture.active = rt;
-        Graphics.Blit(baseTexture,rt);
-        baseTexture=new Texture2D(targetX,targetY);
-        baseTexture.ReadPixels(new Rect(0,0,targetX,targetY),0,0);
-        material.mainTexture = baseTexture;
-        baseTexture.Apply();
+        Graphics.Blit(predictionTexture,rt);
+        predictionTexture=new Texture2D(targetX,targetY);
+        predictionTexture.ReadPixels(new Rect(0,0,targetX,targetY),0,0);
+        predictionTexture.Apply();
+    }
+    
+    void DrawResize(int targetX,int targetY)
+    {
+        RenderTexture rt=new RenderTexture(targetX, targetY,8);
+        RenderTexture.active = rt;
+        Graphics.Blit(drawTexture,rt);
+        drawTexture=new Texture2D(targetX,targetY);
+        drawTexture.ReadPixels(new Rect(0,0,targetX,targetY),0,0);
+        material.mainTexture = drawTexture;
+        drawTexture.Apply();
     }
 }

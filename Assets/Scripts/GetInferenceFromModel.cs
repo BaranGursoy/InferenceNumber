@@ -57,7 +57,7 @@ public class GetInferenceFromModel : MonoBehaviour
 
     public void Inference()
     {
-            var texture = drawOnTexture.TextureScaleDown();
+            var texture = drawOnTexture.PredictionTextureScaleDown();
         // making a tensor out of a grayscale texture
             var channelCount = 1; // 1 = grayscale, 3 = color, 4 = color + alpha
             var inputX = new Tensor(texture, channelCount);
@@ -66,6 +66,6 @@ public class GetInferenceFromModel : MonoBehaviour
             inputX.Dispose();
             
             prediction.SetPrediction(outputY, text);
-            drawOnTexture.TextureScaleUp();
+            drawOnTexture.PredictionTextureScaleUp();
     }
 }
